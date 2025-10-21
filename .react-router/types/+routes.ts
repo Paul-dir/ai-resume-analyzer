@@ -20,12 +20,17 @@ type Pages = {
   "/upload": {
     params: {};
   };
+  "/resume/:id": {
+    params: {
+      "id": string;
+    };
+  };
 };
 
 type RouteFiles = {
   "root.tsx": {
     id: "root";
-    page: "/" | "/auth" | "/upload";
+    page: "/" | "/auth" | "/upload" | "/resume/:id";
   };
   "routes/home.tsx": {
     id: "routes/home";
@@ -39,6 +44,10 @@ type RouteFiles = {
     id: "routes/upload";
     page: "/upload";
   };
+  "routes/resume.tsx": {
+    id: "routes/resume";
+    page: "/resume/:id";
+  };
 };
 
 type RouteModules = {
@@ -46,4 +55,5 @@ type RouteModules = {
   "routes/home": typeof import("./app/routes/home.tsx");
   "routes/auth": typeof import("./app/routes/auth.tsx");
   "routes/upload": typeof import("./app/routes/upload.tsx");
+  "routes/resume": typeof import("./app/routes/resume.tsx");
 };

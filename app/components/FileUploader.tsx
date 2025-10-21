@@ -1,8 +1,12 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
-import upload from "~/routes/upload";
 
-const FileUploader = ({ onFileSelect }: { onFileSelect?: (file: File | null) => void }) => {
+interface FileUploaderProps {
+    onFileSelect?: (file: File | null) => void;
+}
+
+const FileUploader: React.FC<FileUploaderProps> = ({ onFileSelect }) => {
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
     const formatSize = (bytes: number): string => {
         if (bytes === 0) return '0 Bytes';
@@ -13,59 +17,72 @@ const FileUploader = ({ onFileSelect }: { onFileSelect?: (file: File | null) => 
     };
 
     const onDrop = useCallback((acceptedFiles: File[]) => {
+        console.log('Accepted files:', acceptedFiles);
         const file = acceptedFiles[0] || null;
+        setSelectedFile(file);
         onFileSelect?.(file);
     }, [onFileSelect]);
 
-    const { getRootProps, getInputProps, isDragActive , acceptedFiles} = useDropzone({
-        onDrop ,
-        multiple : false,
-        accept: { 'application/pdf': ['.pdf'] },
-        maxSize: 20*1024*1024,
-
+    const { getRootProps, getInputProps, isDragActive, fileRejections } = useDropzone({
+        onDrop,
+        multiple: false,
+        accept: ['.pdf'], // simple and compatible
+        maxSize: 20 * 1024 * 1024,
     });
-    const file =acceptedFiles[0] || null;
 
+    useEffect(() => {
+        if (fileRejections.length > 0) {
+            console.warn('Rejected:', fileRejections);
+            alert('Only PDF files under 20 MB are allowed.');
+        }
+    }, [fileRejections]);
 
     return (
-        <div className="w-full gradient-border">
-            <div {...getRootProps()}>
+        <div className="w-full p-4">
+            <div
+                {...getRootProps({
+                    className: `border-2 border-dashed rounded-xl p-8 transition-colors duration-300 cursor-pointer flex flex-col items-center justify-center ${
+                        isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-gray-50'
+                    }`,
+                })}
+            >
                 <input {...getInputProps()} />
-                <div className="space-y-4 cursor-pointer">
 
-                    {file ? (
-                        <div className="uploader-selected-file" onClick={(e) => e.stopPropagation()}>
-                            <img src="/images/pdf.png" alt="pdf" className="size-10"/>
-                            <div className="flex items-center space-x-3">
+                {selectedFile ? (
+                    <div className="flex items-center justify-between w-full max-w-md p-3 bg-white rounded-lg shadow-sm">
+                        <div className="flex items-center space-x-3">
+                            <img src="/images/pdf.png" alt="pdf" className="w-10 h-10" />
                             <div>
-                                <p className="text-sm text-gray-700 truncate max=w-xs">
-                                    {file.name}
+                                <p className="text-sm text-gray-700 truncate max-w-[200px]">
+                                    {selectedFile.name}
                                 </p>
-                                <p className="text-gray-500">
-                                    {formatSize(file.size)}
-                                </p>
-                             </div>
-                             </div>
-                            <button className="p-2 cursor-pointer" onClick={(e) => {
-                                onFileSelect?.(null)
-                            }}>
-                                <img src="/icons/cross.svg" alt="remove" className="w-4 h-4"/>
-                            </button>
-
-                        </div>
-
-                    ) : (
-                        <div>
-                            <div className="mx-auto w-16 h-16 flex items-center justify-center mb-2">
-                                <img src="/icons/info.svg" alt="upload" className="size-20"/>
+                                <p className="text-gray-500 text-xs">{formatSize(selectedFile.size)}</p>
                             </div>
-                            <p className="text-lg text-gray-500">
-                                <span className="font-semibold">Click to upload</span> or drag and drop
-                            </p>
-                            <p className="text-lg text-gray-500">PDF (max 20 MB)</p>
                         </div>
-                    )}
-                </div>
+                        <button
+                            className="p-2 rounded-full hover:bg-gray-100"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedFile(null);
+                                onFileSelect?.(null);
+                            }}
+                        >
+                            <img src="/icons/cross.svg" alt="remove" className="w-4 h-4" />
+                        </button>
+                    </div>
+                ) : (
+                    <div className="text-center text-gray-500">
+                        <img src="/icons/info.svg" alt="upload" className="w-16 h-16 mx-auto mb-3" />
+                        {isDragActive ? (
+                            <p className="text-blue-600 font-medium">Drop your PDF here...</p>
+                        ) : (
+                            <>
+                                <p className="text-lg">Click to upload or drag & drop</p>
+                                <p className="text-sm">PDF files only (max 20 MB)</p>
+                            </>
+                        )}
+                    </div>
+                )}
             </div>
         </div>
     );

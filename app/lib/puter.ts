@@ -1,5 +1,37 @@
 import { create } from "zustand";
 
+interface PuterUser {
+    id: string;
+    username: string;
+    email?: string;
+}
+
+interface FSItem {
+    path: string;
+    name: string;
+    is_dir: boolean;
+}
+
+interface ChatMessage {
+    role: string;
+    content: Array<{ type: string; text?: string; puter_path?: string }>;
+}
+
+interface PuterChatOptions {
+    model?: string;
+    temperature?: number;
+}
+
+interface AIResponse {
+    content: string;
+    role: string;
+}
+
+interface KVItem {
+    key: string;
+    value: string;
+}
+
 declare global {
     interface Window {
         puter: {
@@ -91,7 +123,7 @@ interface PuterStore {
         ) => Promise<string[] | KVItem[] | undefined>;
         flush: () => Promise<boolean | undefined>;
     };
-
+    setAuth: (auth: Partial<PuterStore['auth']>) => void;
     init: () => void;
     clearError: () => void;
 }
@@ -114,6 +146,30 @@ export const usePuterStore = create<PuterStore>((set, get) => {
                 getUser: get().auth.getUser,
             },
         });
+    };
+
+    const init = (): void => {
+        const puter = getPuter();
+        if (puter) {
+            set({ puterReady: true });
+            checkAuthStatus();
+            return;
+        }
+
+        const interval = setInterval(() => {
+            if (getPuter()) {
+                clearInterval(interval);
+                set({ puterReady: true });
+                checkAuthStatus();
+            }
+        }, 100);
+
+        setTimeout(() => {
+            clearInterval(interval);
+            if (!getPuter()) {
+                setError("Puter.js failed to load within 10 seconds");
+            }
+        }, 10000);
     };
 
     const checkAuthStatus = async (): Promise<boolean> => {
@@ -171,9 +227,7 @@ export const usePuterStore = create<PuterStore>((set, get) => {
             setError("Puter.js not available");
             return;
         }
-
         set({ isLoading: true, error: null });
-
         try {
             await puter.auth.signIn();
             await checkAuthStatus();
@@ -189,9 +243,7 @@ export const usePuterStore = create<PuterStore>((set, get) => {
             setError("Puter.js not available");
             return;
         }
-
         set({ isLoading: true, error: null });
-
         try {
             await puter.auth.signOut();
             set({
@@ -218,9 +270,7 @@ export const usePuterStore = create<PuterStore>((set, get) => {
             setError("Puter.js not available");
             return;
         }
-
         set({ isLoading: true, error: null });
-
         try {
             const user = await puter.auth.getUser();
             set({
@@ -239,30 +289,6 @@ export const usePuterStore = create<PuterStore>((set, get) => {
             const msg = err instanceof Error ? err.message : "Failed to refresh user";
             setError(msg);
         }
-    };
-
-    const init = (): void => {
-        const puter = getPuter();
-        if (puter) {
-            set({ puterReady: true });
-            checkAuthStatus();
-            return;
-        }
-
-        const interval = setInterval(() => {
-            if (getPuter()) {
-                clearInterval(interval);
-                set({ puterReady: true });
-                checkAuthStatus();
-            }
-        }, 100);
-
-        setTimeout(() => {
-            clearInterval(interval);
-            if (!getPuter()) {
-                setError("Puter.js failed to load within 10 seconds");
-            }
-        }, 10000);
     };
 
     const write = async (path: string, data: string | File | Blob) => {
@@ -321,7 +347,6 @@ export const usePuterStore = create<PuterStore>((set, get) => {
             setError("Puter.js not available");
             return;
         }
-        // return puter.ai.chat(prompt, imageURL, testMode, options);
         return puter.ai.chat(prompt, imageURL, testMode, options) as Promise<
             AIResponse | undefined
         >;
@@ -333,7 +358,6 @@ export const usePuterStore = create<PuterStore>((set, get) => {
             setError("Puter.js not available");
             return;
         }
-
         return puter.ai.chat(
             [
                 {
@@ -450,7 +474,10 @@ export const usePuterStore = create<PuterStore>((set, get) => {
                 listKV(pattern, returnValues),
             flush: () => flushKV(),
         },
-        init,
+        setAuth: (auth: Partial<PuterStore['auth']>) => set((state) => ({
+            auth: { ...state.auth, ...auth },
+        })),
+        init: init,
         clearError: () => set({ error: null }),
     };
 });
