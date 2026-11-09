@@ -1,126 +1,122 @@
-import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 import { usePuterStore } from "~/lib/puter";
 
-export const meta = () => ([
+export const meta = () => [
     { title: "Resumind | Auth" },
-    { name: "description", content: "Log into your account" },
-]);
+    { name: "description", content: "Log into your Resumind account" },
+];
 
 const Auth: React.FC = () => {
-    const { isLoading, auth, setAuth } = usePuterStore();
+    const { isLoading, auth, puterReady } = usePuterStore();
     const location = useLocation();
     const navigate = useNavigate();
-    const [loginConfirmed, setLoginConfirmed] = useState(false);
-    const [initialized, setInitialized] = useState(false);
+    const [authError, setAuthError] = useState("");
+    const [isAuthenticating, setIsAuthenticating] = useState(false);
 
-    // Extract ?next=somepath, default to '/upload'
-    const next = new URLSearchParams(location.search).get("next") || "/upload";
+    // Extract ?next=somepath, default to '/'
+    const next = new URLSearchParams(location.search).get("next") || "/";
 
-    // Check auth status on mount
     useEffect(() => {
-        auth.checkAuthStatus().then((isSignedIn: boolean) => {
-            console.log('Initial auth check:', { isSignedIn, isAuthenticated: auth.isAuthenticated });
-            if (isSignedIn) {
-                setLoginConfirmed(true);
-            }
-            setInitialized(true);
-        });
-    }, [auth.checkAuthStatus, auth.isAuthenticated]);
-
-    // Debug auth state
-    useEffect(() => {
-        console.log('Auth state:', { isAuthenticated: auth.isAuthenticated, isLoading, loginConfirmed, next });
-    }, [auth.isAuthenticated, isLoading, loginConfirmed, next]);
-
-    // Redirect only after confirmed login
-    useEffect(() => {
-        if (auth.isAuthenticated && !isLoading && loginConfirmed && initialized) {
-            console.log('Redirecting to:', next);
+        // If already logged in and not explicitly staying on auth, redirect to destination
+        if (auth.isAuthenticated && !isLoading && !isAuthenticating) {
             navigate(next, { replace: true });
         }
-    }, [auth.isAuthenticated, isLoading, loginConfirmed, initialized, next, navigate]);
+    }, [auth.isAuthenticated, isLoading, next, navigate, isAuthenticating]);
 
-    // Handle login
     const handleSignIn = async () => {
-        if (!auth.signIn) {
-            console.error('auth.signIn is undefined');
-            return;
-        }
+        setAuthError("");
+        setIsAuthenticating(true);
         try {
-            console.log('Attempting login');
             await auth.signIn();
-            console.log('Login successful');
-            setLoginConfirmed(true);
-        } catch (err) {
-            console.error('Login error:', err);
-            setLoginConfirmed(false);
+            const isSignedIn = await auth.checkAuthStatus();
+            if (isSignedIn) {
+                navigate(next, { replace: true });
+            }
+        } catch (err: any) {
+            console.error("Login error:", err);
+            setAuthError(err?.message || "Failed to sign in with Puter. Please try again.");
+        } finally {
+            setIsAuthenticating(false);
         }
     };
 
-    // Handle logout
     const handleSignOut = async () => {
-        if (!auth.signOut) {
-            console.error('auth.signOut is undefined');
-            return;
-        }
+        setAuthError("");
         try {
-            console.log('Attempting logout');
             await auth.signOut();
-            console.log('Logout successful');
-            setLoginConfirmed(false);
-            navigate("/auth");
-        } catch (err) {
-            console.error('Logout error:', err);
+        } catch (err: any) {
+            console.error("Logout error:", err);
+            setAuthError(err?.message || "Failed to log out.");
         }
     };
-
-    // Show loading state until initialized
-    if (!initialized) {
-        return (
-            <main className="flex items-center justify-center min-h-screen bg-gray-100">
-                <p>Loading authentication state...</p>
-            </main>
-        );
-    }
 
     return (
-        <main className="bg-[url('/images/bg-auth.svg')] bg-cover min-h-screen flex items-center justify-center">
-            <div className="gradient-border shadow-lg rounded-2xl">
-                <section className="flex flex-col gap-8 bg-white rounded-2xl p-10 w-[350px] sm:w-[400px]">
+        <main className="bg-[url('/images/bg-auth.svg')] bg-cover min-h-screen flex items-center justify-center p-4">
+            <div className="gradient-border shadow-xl rounded-3xl w-full max-w-md">
+                <section className="flex flex-col gap-6 bg-white rounded-2xl p-8 sm:p-10 text-center">
                     {/* Header */}
-                    <div className="flex flex-col gap-2 items-center text-center">
-                        <h1 className="text-2xl font-bold text-gray-900">Welcome</h1>
-                        <h2 className="text-gray-600 text-sm">
-                            Log in to continue your journey
+                    <div className="flex flex-col gap-1 items-center">
+                        <Link to="/" className="text-2xl font-black text-gradient tracking-tight mb-2">
+                            RESUMIND
+                        </Link>
+                        <h1 className="text-2xl font-bold text-gray-900">
+                            {auth.isAuthenticated ? "Welcome Back!" : "Account Login"}
+                        </h1>
+                        <h2 className="text-gray-500 text-sm">
+                            {auth.isAuthenticated
+                                ? `You are signed in as ${auth.user?.username || "Puter User"}`
+                                : "Sign in to save and analyze your resumes with AI"}
                         </h2>
                     </div>
 
-                    {/* Auth Buttons */}
-                    {isLoading ? (
-                        <button
-                            className="auth-button bg-gray-300 text-gray-700 px-8 py-3 rounded-full animate-pulse cursor-not-allowed"
-                            disabled
-                        >
-                            Signing you in...
-                        </button>
-                    ) : auth.isAuthenticated && loginConfirmed ? (
-                        <button
-                            className="auth-button bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-full transition-all"
-                            onClick={handleSignOut}
-                            disabled={!auth.signOut}
-                        >
-                            Log Out
-                        </button>
-                    ) : (
-                        <button
-                            className="auth-button bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-full transition-all"
-                            onClick={handleSignIn}
-                            disabled={!auth.signIn}
-                        >
-                            Log In
-                        </button>
+                    {authError && (
+                        <div className="p-3 bg-red-50 text-red-600 rounded-xl text-xs text-left">
+                            {authError}
+                        </div>
                     )}
+
+                    {/* Action Buttons */}
+                    <div className="flex flex-col gap-3 mt-2">
+                        {auth.isAuthenticated ? (
+                            <>
+                                <button
+                                    onClick={() => navigate(next, { replace: true })}
+                                    className="primary-button py-3 text-base font-semibold"
+                                >
+                                    Continue to App
+                                </button>
+                                <button
+                                    onClick={handleSignOut}
+                                    className="border border-red-200 text-red-600 hover:bg-red-50 py-2.5 rounded-full text-sm font-medium transition-colors cursor-pointer"
+                                >
+                                    Sign Out
+                                </button>
+                            </>
+                        ) : (
+                            <button
+                                className="primary-button py-3.5 text-base font-semibold hover:opacity-95 transition-all flex items-center justify-center gap-2"
+                                onClick={handleSignIn}
+                                disabled={isAuthenticating || isLoading}
+                            >
+                                {isAuthenticating ? (
+                                    <>
+                                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                        <span>Connecting to Puter...</span>
+                                    </>
+                                ) : (
+                                    <span>Sign in with Puter</span>
+                                )}
+                            </button>
+                        )}
+
+                        <Link
+                            to="/"
+                            className="text-xs text-gray-500 hover:text-gray-800 transition-colors mt-2"
+                        >
+                            ← Back to homepage
+                        </Link>
+                    </div>
                 </section>
             </div>
         </main>

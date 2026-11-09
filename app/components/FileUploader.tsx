@@ -26,7 +26,9 @@ const FileUploader: React.FC<FileUploaderProps> = ({ onFileSelect }) => {
     const { getRootProps, getInputProps, isDragActive, fileRejections } = useDropzone({
         onDrop,
         multiple: false,
-        accept: ['.pdf'], // simple and compatible
+        accept: {
+            'application/pdf': ['.pdf'],
+        },
         maxSize: 20 * 1024 * 1024,
     });
 

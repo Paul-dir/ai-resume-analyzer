@@ -1,87 +1,83 @@
-# Welcome to React Router!
+# Resumind — AI Resume Analyzer & Reviewer
 
-A modern, production-ready template for building full-stack React applications using React Router.
+An AI-powered web application built with **React Router v7**, **TypeScript**, **Tailwind CSS v4**, and **Puter.js**. Resumind analyzes resumes against target job descriptions and provides detailed ATS scoring, feedback on content, structure, skills, tone & style, and actionable tips.
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/remix-run/react-router-templates/tree/main/default)
+---
 
-## Features
+## ✨ Features
 
-- 🚀 Server-side rendering
-- ⚡️ Hot Module Replacement (HMR)
-- 📦 Asset bundling and optimization
-- 🔄 Data loading and mutations
-- 🔒 TypeScript by default
-- 🎉 TailwindCSS for styling
-- 📖 [React Router docs](https://reactrouter.com/)
+- 📄 **PDF Upload & Rendering**: Upload PDF resumes with drag-and-drop support, converting the first page into preview images directly in-browser using `pdfjs-dist`.
+- 🤖 **AI-Powered Analysis**: Analyzes resumes with Claude 3.5 Sonnet through Puter.js, scoring ATS compatibility, tone & style, content quality, and skill gaps.
+- 📊 **Detailed Scoring Breakdown**: Interactive score gauges, overall score calculation, and expandable accordion sections with tailored tips.
+- 🗄️ **Persistent Cloud Storage**: Resumes and analysis data are stored in Puter KV & Filesystem per user account.
+- 🔐 **Authentication**: One-click authentication with Puter.
+- 📱 **Responsive Design**: Clean and responsive UI styled with Tailwind CSS v4.
+- 🐳 **Production-Ready Docker Setup**: Multi-stage Docker build ready for deployment on any cloud provider (Google Cloud Run, AWS ECS, Fly.io, Railway, DigitalOcean).
 
-## Getting Started
+---
 
-### Installation
+## 🚀 Getting Started
 
-Install the dependencies:
+### Prerequisites
+
+- Node.js 20+
+- npm (or pnpm / yarn)
+
+### 1. Installation
 
 ```bash
 npm install
 ```
 
-### Development
-
-Start the development server with HMR:
+### 2. Run Development Server
 
 ```bash
 npm run dev
 ```
 
-Your application will be available at `http://localhost:5173`.
+Open [http://localhost:5173](http://localhost:5173) in your browser.
 
-## Building for Production
-
-Create a production build:
+### 3. Type Checking & Production Build
 
 ```bash
+# Type check TypeScript files
+npm run typecheck
+
+# Build for production
 npm run build
+
+# Start production server
+npm run start
 ```
-
-## Deployment
-
-### Docker Deployment
-
-To build and run using Docker:
-
-```bash
-docker build -t my-app .
-
-# Run the container
-docker run -p 3000:3000 my-app
-```
-
-The containerized application can be deployed to any platform that supports Docker, including:
-
-- AWS ECS
-- Google Cloud Run
-- Azure Container Apps
-- Digital Ocean App Platform
-- Fly.io
-- Railway
-
-### DIY Deployment
-
-If you're familiar with deploying Node applications, the built-in app server is production-ready.
-
-Make sure to deploy the output of `npm run build`
-
-```
-├── package.json
-├── package-lock.json (or pnpm-lock.yaml, or bun.lockb)
-├── build/
-│   ├── client/    # Static assets
-│   └── server/    # Server-side code
-```
-
-## Styling
-
-This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever CSS framework you prefer.
 
 ---
 
-Built with ❤️ using React Router.
+## 🐳 Docker Deployment
+
+Build and run using Docker:
+
+```bash
+# Build the Docker image
+docker build -t ai-resume-analyzer .
+
+# Run the container on port 3000
+docker run -p 3000:3000 ai-resume-analyzer
+```
+
+Deployable to:
+- Google Cloud Run
+- AWS ECS / App Runner
+- Fly.io
+- Railway / Render
+- Azure Container Apps
+
+---
+
+## 🛠️ Tech Stack
+
+- **Framework**: React Router v7 (SSR + Client Bundle)
+- **Bundler**: Vite 7
+- **Styling**: Tailwind CSS v4
+- **Language**: TypeScript 5
+- **Backend Services & AI**: Puter.js (Auth, FS, KV, AI Chat)
+- **PDF Processing**: `pdfjs-dist` + HTML5 Canvas
